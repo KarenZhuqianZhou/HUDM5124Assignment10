@@ -1,0 +1,64 @@
+---
+title: "HUDK5124Assignment10"
+author: "Zhuqian Zhou"
+date: "2017/4/9"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1
+**For either the sports data or the furniture data (both rated similarity, collected by Rosch et al.) posted in this session, fit an ultrametric tree to the data using the iterative projection method offered in R’s “ls_fit_ultrametric” routine (see method below, also see posted help file “R_fitting trees to prox data.txt”). Calculate the (squared) correlation of the model distances to the data, RSQ.**
+```{r}
+library(clue)
+f1 <- read.table("FURN_prx_revised.txt", fill = TRUE, header = TRUE) # add zero on diagonal before read the table
+rownames(f1) <- names(f1)
+f2 <- as.matrix(f1)
+ultraD=ls_fit_ultrametric(f2,method=c("IP"), weights = 1, control = list()) # fit an ultrametric tree (LS solution, by iterative projection) to a data set
+hc <- hclust(ultraD, "ave") # method="average"
+dend1 <- as.dendrogram(hc) # "print()" method
+plot(dend1)
+# calculate the "cophenetic correlation" - the corr of data & model distances
+library(gdata)
+datvec = as.vector(lowerTriangle(f2, diag=FALSE)) # Function lowerTriangle() is in Package "gdata"
+modvec = as.vector(ultraD)
+cor(datvec,modvec)
+```
+The correlation of data distances and model distances of the ultrametic tree is 0.7975155 for the furniture data.
+
+#2
+**Again using the iterative projection method offered in R, fit an additive tree to the same data set (using “ls_fit_addtree”). Calculate the (squared) correlation of the model distances to the data, RSQ.**
+```{r}
+addD=ls_fit_addtree(f2,method=c("IP"), weights = 1, control = list()) # fit an additive tree (LS solution, by "iterative projection" method to the data set
+addD
+hc2 <- hclust(addD, "ave")
+dend2 <- as.dendrogram(hc2)
+plot(dend2)
+modvec2 = as.vector(addD)
+cor(datvec,modvec2) # The correlation of data distances and model distances of the additive tree is 0.9067304 for the furniture data at this run.
+# However, IP uses a semi-randomized start. It is susceptible to local minima, so run multiple starts.
+corvector <- c(rep(0,25))
+for (i in 1:25)
+{addD3=ls_fit_addtree(f2,method=c("IP"), weights = 1, control = list())
+modvec3=as.vector(addD3)
+corvector[i]=cor(datvec,modvec3) # calculate linear fit = corr of data & model distances
+}
+corvector # the vector of fits shows that local minima are very common (cf. Smith, 1998)
+```
+
+#3
+**Also fit an additive tree to the data using GTREE. Compare the fit of this solution to the results using the R methods. Comment.**
+Although I cannot run the executable file "gtree.exe" anyhow, I will set down the furthest step I am currently able to get.
+1) Download Pascal Compiler for Mac: go to Website [free pascal](http://www.freepascal.org/down/i386/macosx-hungary.var) and download [fpc-3.0.2.intel-macosx.dmg](ftp://ftp.hu.freepascal.org/pub/fpc/dist/3.0.2/i386-macosx/fpc-3.0.2.intel-macosx.dmg)
+2) Install the Mac OS X installer package named "fpc-3.0.2.intel-macosx.pkg"
+3) Download the file [gtree.pas](http://netlib.sandia.gov/mds/gtree.pas)
+4) Open "Terminal" on Mac and Type the following lines after the dollar sign:
+$ *cd* address_of_the_*repository*_where_I_saved_gtree.pas
+$ *fpc* gtree.pas
+5) Open the folder where I saved "gtree.pas", I saw a Unix executable file named "gtree"
+6) Double click that file and start fitting the additive tree. (But it always shows error 2 (fild not found). That's where I cannot get anything further.)
+
+**References**
+Smith, T. J. (1998). A comparison of three additive tree algorithms that rely on a leastsquares
